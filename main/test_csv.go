@@ -20,8 +20,8 @@ func main() {
 	}
 	for g := 0; g < len(records[0]); g++ {
 		fmt.Printf("%4d ", g)
-		for i := 0; i < 2; i++ {
-			fmt.Printf("%s| ", records[i][g])
+		for i := 0; i < 8; i++ {
+			fmt.Printf("|%s ", records[i][g])
 		}
 		fmt.Println()
 	}
