@@ -2,9 +2,12 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -12,29 +15,34 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	a(file, 0)
-	a(file, 0)
-	//_, err = file.Seek(21, 0)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//reader := bufio.NewReader(file)
-	//bytes, err := reader.Peek(1033)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//fmt.Println(string(bytes))
-	//_, err = file.Seek(0, 1)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//reader = bufio.NewReader(file)
-	//bytes, err = reader.Peek(81)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//fmt.Println(string(bytes))
-	//defer file.Close()
+	defer file.Close()
+
+	var records [][]string
+	var str string
+	for {
+		str, err = a(file)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			log.Fatal(err)
+		}
+		strReader := strings.NewReader(str)
+		csvReader := csv.NewReader(strReader)
+		record, err := csvReader.ReadAll()
+		if err != nil {
+			log.Fatal(err)
+		}
+		records = append(records, record[0])
+	}
+	for g := 0; g < len(records[0]); g++ {
+		fmt.Printf("%4d ", g)
+		for i := 0; i < 8; i++ {
+			fmt.Printf("%s|", records[i][g])
+		}
+		fmt.Println()
+	}
+
 	//r := csv.NewReader(file)
 	//records, err := r.ReadAll()
 	//if err != nil {
@@ -49,27 +57,15 @@ func main() {
 	//}
 }
 
-func a(file *os.File, g int64) {
-	length := 84
-	reader := bufio.NewReader(file)
-	bytes, err := reader.Peek(length)
+func a(file *os.File) (string, error) {
+	reader := bufio.NewReaderSize(file, 4096)
+	bytes, err := reader.ReadBytes('\n')
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
-	_, err = file.Seek(0, 0)
+	_, err = file.Seek(int64(-reader.Buffered()), 1)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
-	for bytes[len(bytes)-1] != 13 {
-		length++
-		bytes, err = reader.Peek(length)
-		if err != nil {
-			log.Fatal(err)
-		}
-		_, err = file.Seek(0, 0)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	fmt.Println(string(bytes[:len(bytes)-1]))
+	return string(bytes), nil
 }
